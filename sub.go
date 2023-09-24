@@ -35,24 +35,37 @@ type Sub struct {
 	OnDisconnect      sse.ConnCallback
 }
 
-func NewSub(logger *logr.Logger, sseURL string, jwtKey string) *Sub {
-	if sseURL == "" {
-		sseURL = "http://localhost:8000/connection/uni_sse"
+func NewSub(logger *logr.Logger, sseURL string, options ...func(*Sub)) *Sub {
+	suber := &Sub{logger: logger, sseURL: sseURL}
+	for _, opt := range options {
+		opt(suber)
 	}
-
-	return &Sub{logger: logger, sseURL: sseURL, jwtKey: jwtKey}
+	suber.initialize()
+	return suber
 }
 
-func (s *Sub) SetMaxBufferSize(maxBufferSize int) {
-	s.maxBufferSize = maxBufferSize
+func WithJWTKey(jwtKey string) func(*Sub) {
+	return func(s *Sub) {
+		s.jwtKey = jwtKey
+	}
 }
 
-func (s *Sub) SetEventBufferSize(eventBufferSize int) {
-	s.eventBufferSize = eventBufferSize
+func WithMaxBufferSize(maxBufferSize int) func(*Sub) {
+	return func(s *Sub) {
+		s.maxBufferSize = maxBufferSize
+	}
 }
 
-func (s *Sub) SetReconnectStrategy(reconnectStrategy backoff.BackOff) {
-	s.reconnectStrategy = reconnectStrategy
+func WithEventBufferSize(eventBufferSize int) func(*Sub) {
+	return func(s *Sub) {
+		s.eventBufferSize = eventBufferSize
+	}
+}
+
+func WithReconnectStrategy(reconnectStrategy backoff.BackOff) func(*Sub) {
+	return func(s *Sub) {
+		s.reconnectStrategy = reconnectStrategy
+	}
 }
 
 func (s *Sub) defaultReconnectStrategy() backoff.BackOff {
@@ -62,6 +75,10 @@ func (s *Sub) defaultReconnectStrategy() backoff.BackOff {
 }
 
 func (s *Sub) initialize() {
+	if s.sseURL == "" {
+		s.sseURL = "http://localhost:8000/connection/uni_sse"
+	}
+
 	if s.maxBufferSize == 0 {
 		s.maxBufferSize = defaultMaxBufferSize
 	}
@@ -153,7 +170,6 @@ func (s *Sub) genToken(channel, user, jwtKey string, exp int64) string {
 }
 
 func (s *Sub) Subscribe(ctx context.Context, channel string, user string) (<-chan *sse.Event, error) {
-	s.initialize()
 	client, err := s.prepareClient(channel, user)
 	if err != nil {
 		return nil, err

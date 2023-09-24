@@ -2,7 +2,33 @@ package sseclient
 
 import (
 	"encoding/json"
+	"fmt"
 )
+
+type APIMethod string
+
+const (
+	publishMethod  APIMethod = "publish"
+	presenceMethod APIMethod = "presence"
+)
+
+type ErrBadStatus struct {
+	Code int
+	Body string
+}
+
+func (err *ErrBadStatus) Error() string {
+	return fmt.Sprintf("bad status code: %d, text:%s", err.Code, err.Body)
+}
+
+type ErrLogic struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+func (err *ErrLogic) Error() string {
+	return fmt.Sprintf("logic error, code: %d, msg: %s ", err.Code, err.Message)
+}
 
 // https://github.com/centrifugal/centrifugo/blob/5a7b9176b3be622af1a21e134b880e1cc5e4b4e4/internal/jwtverify/token_verifier_jwt.go#L377
 
@@ -46,3 +72,45 @@ type SubscribeOptions struct {
 
 // claimsSub define per-subscription options.
 type claimsSub map[string]interface{}
+
+type APIRequest struct {
+	Method string      `json:"method"`
+	Params interface{} `json:"params"`
+}
+
+type PublishParams struct {
+	Channel     string          `json:"channel,omitempty"`
+	Data        json.RawMessage `json:"data,omitempty"`
+	SkipHistory bool            `json:"skip_history,omitempty"`
+}
+
+type PublishResponse struct {
+	Error  ErrLogic `json:"error,omitempty"`
+	Result struct {
+		Offset int    `json:"offset,omitempty"`
+		Epoch  string `json:"epoch,omitempty"`
+	} `json:"result,omitempty"`
+}
+
+type EventData struct {
+	Channel string `json:"channel,omitempty"`
+	Pub     struct {
+		Data json.RawMessage `json:"data,omitempty"`
+	} `json:"pub,omitempty"`
+}
+
+// https://centrifugal.dev/docs/3/server/server_api#presence
+type GetOnlineParams struct {
+	Channel string `json:"channel,omitempty"`
+}
+type PresenceItem struct {
+	Client string `json:"client,omitempty"`
+	User   string `json:"user,omitempty"`
+}
+
+type GetOnlineResponse struct {
+	Error  ErrLogic `json:"error,omitempty"`
+	Result struct {
+		Presence map[string]PresenceItem `json:"presence,omitempty"`
+	} `json:"result,omitempty"`
+}
