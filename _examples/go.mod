@@ -5,7 +5,7 @@ go 1.21.1
 require (
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zerologr v1.2.3
-	github.com/koolay/centrifuge-sse-client/sseclient v0.0.0
+	github.com/koolay/centrifuge-sse-client v0.0.0
 	github.com/rs/zerolog v1.30.0
 )
 
@@ -27,4 +27,4 @@ require (
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 )
 
-replace github.com/koolay/centrifuge-sse-client/sseclient => ../
+replace github.com/koolay/centrifuge-sse-client => ../

@@ -1,4 +1,4 @@
-module github.com/koolay/centrifuge-sse-client/sseclient
+module github.com/koolay/centrifuge-sse-client
 
 go 1.21.1
 

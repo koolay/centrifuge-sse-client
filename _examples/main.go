@@ -11,7 +11,7 @@ import (
 	"github.com/go-logr/zerologr"
 	"github.com/rs/zerolog"
 
-	"github.com/koolay/centrifuge-sse-client/sseclient"
+	sseclient "github.com/koolay/centrifuge-sse-client"
 )
 
 var (

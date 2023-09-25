@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/koolay/centrifuge-sse-client/sseclient"
+	sseclient "github.com/koolay/centrifuge-sse-client"
 )
 
 type Post struct {
