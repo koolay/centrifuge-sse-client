@@ -87,7 +87,7 @@ func (s *Sub) initialize() {
 	}
 }
 
-func (s *Sub) prepareClient(channel string, user string) (*sse.Client, error) {
+func (s *Sub) prepareClient(channel string, clientName string) (*sse.Client, error) {
 	subReqs := make(map[string]*protocol.SubscribeRequest)
 	subReqs[channel] = &protocol.SubscribeRequest{
 		// Whether a client wants to recover from a certain position
@@ -97,9 +97,20 @@ func (s *Sub) prepareClient(channel string, user string) (*sse.Client, error) {
 		// Known stream position offset when recover is used
 		Offset: 0,
 	}
-	token := s.genToken(channel, user, s.jwtKey, 0)
+
+	var token string
+	var err error
+	if s.jwtKey != "" {
+		token, err = s.genToken(channel, clientName, s.jwtKey, 0)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		s.logger.Info("No JWT key provided")
+	}
+
 	req := &protocol.ConnectRequest{
-		Name:  "1",
+		Name:  clientName,
 		Token: token,
 		Subs:  subReqs,
 	}
@@ -152,25 +163,26 @@ func (s *Sub) prepareClient(channel string, user string) (*sse.Client, error) {
 	return client, nil
 }
 
-func (s *Sub) genToken(channel, user, jwtKey string, exp int64) string {
+func (s *Sub) genToken(channel, clientName, jwtKey string, exp int64) (string, error) {
 	// https://centrifugal.dev/docs/transports/uni_sse
 	// https://centrifugal.dev/docs/transports/uni_websocket#connect-command
 	subs := claimsSub{
 		channel: SubscribeOptions{},
 	}
-	claims := jwt.MapClaims{"sub": user, "subs": subs}
+	claims := jwt.MapClaims{"sub": clientName, "subs": subs}
 	if exp > 0 {
 		claims["exp"] = exp
 	}
 	t, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(jwtKey))
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
-	return t
+
+	return t, nil
 }
 
-func (s *Sub) Subscribe(ctx context.Context, channel string, user string) (<-chan *sse.Event, error) {
-	client, err := s.prepareClient(channel, user)
+func (s *Sub) Subscribe(ctx context.Context, channel string, clientName string) (<-chan *sse.Event, error) {
+	client, err := s.prepareClient(channel, clientName)
 	if err != nil {
 		return nil, err
 	}
