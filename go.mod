@@ -1,6 +1,6 @@
 module github.com/koolay/centrifuge-sse-client
 
-go 1.21.1
+go 1.21
 
 require (
 	github.com/centrifugal/protocol v0.10.0
